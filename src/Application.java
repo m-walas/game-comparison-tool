@@ -1,25 +1,40 @@
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.LoggerConfig;
+package mateusz.projekt;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowAdapter;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 public class Application extends URLWebsite {
 
@@ -36,35 +51,15 @@ public class Application extends URLWebsite {
 
     private static final Logger log = LogManager.getLogger(Application.class);
 
-    private static final DBHandler dbHandler = new DBHandler();
-
-    public void storeInDatabase(GameInfo game) {
-
-        String query = "INSERT INTO games (imgURL, name, price, platform, distribution, language_version, pegi, mode, premier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try {
-            PreparedStatement preparedStatement = dbHandler.getConnection().prepareStatement(query);
-            preparedStatement.setString(1, game.getImgURL());
-            preparedStatement.setString(2, game.getName());
-            preparedStatement.setString(3, game.getPrice());
-            preparedStatement.setString(4, game.getPlatform());
-            preparedStatement.setString(5, game.getDistribution());
-            preparedStatement.setString(6, game.getLanguage_version());
-            preparedStatement.setString(7, game.getPegi());
-            preparedStatement.setString(8, game.getMode());
-            preparedStatement.setString(9, game.getPremier());
-
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public ArrayList<GameInfo> addNewGame() {
 
-        Document website = null;
+    	Document website = null;
         try {
-            website = Jsoup.connect(URL).get();
+            website = Jsoup.connect(URL)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+                    .header("Accept", "text/html")
+                    .header("Accept-Language", "en-US,en;q=0.9")
+                    .get();
         } catch (Exception e) {
             log.error("Error while connecting to website: " + e);
             return ArrGames;
@@ -84,7 +79,7 @@ public class Application extends URLWebsite {
             game.setImgURL(el.select("img").tagName("img").attr("src").replace("product-mini", "product-medium"));
 
             game.setName(el.select("div.sc-3g60u5-0:has(>a>h3)").text());
-            game.setPrice(el.select("div.sc-1yu46qn-14:has(>div)").text());
+            game.setPrice(el.select("div.sc-1yu46qn-15:has(>div>div)").text());
 
             for (int i = liCouterLoop; i < (liCouterLoop + 4); i++) {
                 // if li element is not empty, check if it is pegi, mode or type
@@ -120,7 +115,6 @@ public class Application extends URLWebsite {
             }
 
             liCouterLoop += 4;
-//            storeInDatabase(game);
             ArrGames.add(game);
         }
         log.info("all games: " + ArrGames.size() + "");
